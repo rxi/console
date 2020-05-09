@@ -366,8 +366,7 @@ command.add(nil, {
   end,
 
   ["console:run"] = function()
-    core.command_view:set_text(last_command)
-    core.command_view.doc:set_selection(math.huge, math.huge, 1, 1)
+    core.command_view:set_text(last_command, true)
     core.command_view:enter("Run Console Command", function(cmd)
       console.run { command = cmd }
       last_command = cmd
