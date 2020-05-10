@@ -40,7 +40,7 @@ local console = {}
 local views = {}
 local pending_threads = {}
 local thread_active = false
-local output = { { text = "", time = os.time() } }
+local output = { { text = "", time = 0 } }
 local output_id = 0
 local visible = false
 
@@ -356,6 +356,10 @@ end
 local last_command = ""
 
 command.add(nil, {
+  ["console:reset-output"] = function()
+    output = { { text = "", time = 0 } }
+  end,
+
   ["console:open-console"] = function()
     local node = core.root_view:get_active_node()
     node:add_view(ConsoleView())
