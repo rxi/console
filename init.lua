@@ -121,13 +121,13 @@ function console.run(opt)
         echo "" >%q
         exit
       ]], files.script, files.output, files.complete))
-      os.execute(string.format("start /min call %q", files.script2))
+      system.exec(string.format("call %q", files.script2))
     else
       write_file(files.script, string.format([[
         %s
         touch %q
       ]], opt.command, files.complete))
-      os.execute(string.format("bash %q >%q 2>&1 &", files.script, files.output))
+      system.exec(string.format("bash %q >%q 2>&1", files.script, files.output))
     end
 
     -- checks output file for change and reads
