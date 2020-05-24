@@ -188,7 +188,6 @@ function ConsoleView:new()
   ConsoleView.super.new(self)
   self.scrollable = true
   self.hovered_idx = -1
-  self.focusable = false
   views[self] = true
 end
 
@@ -274,6 +273,7 @@ function ConsoleView:on_mouse_pressed(...)
       return
     end
     core.try(function()
+      core.set_active_view(core.last_active_view)
       local dv = core.root_view:open_doc(core.open_doc(resolved_file))
       if line then
         dv.doc:set_selection(line, col or 0)
