@@ -383,4 +383,7 @@ keymap.add {
   ["ctrl+shift+."] = "console:run",
 }
 
+-- for `workspace` plugin:
+package.loaded["plugins.console.view"] = ConsoleView
+
 return console
