@@ -9,31 +9,12 @@ local View = require "core.view"
 config.console_size = 250 * SCALE
 config.max_console_lines = 200
 
-
-local uid = os.tmpname():gsub("%W", "")
-
 local files = {
-  script   = EXEDIR .. "/.lite_console_" .. uid .. "_script",
-  script2  = EXEDIR .. "/.lite_console_" .. uid .. "_script2",
-  output   = EXEDIR .. "/.lite_console_" .. uid .. "_output",
-  complete = EXEDIR .. "/.lite_console_" .. uid .. "_complete",
+  script   = core.temp_filename(PLATFORM == "Windows" and ".bat"),
+  script2  = core.temp_filename(PLATFORM == "Windows" and ".bat"),
+  output   = core.temp_filename(),
+  complete = core.temp_filename(),
 }
-
-if PLATFORM == "Windows" then
-  files.script  = files.script  .. ".bat"
-  files.script2 = files.script2 .. ".bat"
-end
-
-local function clean_up()
-  for _, file in pairs(files) do
-    os.remove(file)
-  end
-end
-clean_up()
-
-local exit = os.exit
-os.exit = function(...) clean_up() return exit(...) end
-
 
 local console = {}
 
@@ -154,7 +135,9 @@ function console.run(opt)
     push_output("!DIVIDER\n", opt)
 
     -- clean up and finish
-    clean_up()
+    for _, file in pairs(files) do
+      os.remove(file)
+    end
     opt.on_complete()
 
     -- handle pending thread
