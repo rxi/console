@@ -132,6 +132,9 @@ function console.run(opt)
       coroutine.yield(0.1)
     end
     check_output_file()
+    if output[#output].text ~= "" then
+      push_output("\n", opt)
+    end
     push_output("!DIVIDER\n", opt)
 
     -- clean up and finish
