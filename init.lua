@@ -8,6 +8,7 @@ local View = require "core.view"
 
 config.console_size = 250 * SCALE
 config.max_console_lines = 200
+config.autoscroll_console = true
 
 local files = {
   script   = core.temp_filename(PLATFORM == "Windows" and ".bat"),
@@ -21,9 +22,13 @@ local console = {}
 local views = {}
 local pending_threads = {}
 local thread_active = false
-local output = { { text = "", time = 0 } }
+local output = nil
 local output_id = 0
 local visible = false
+
+function console.clear()
+  output = { { text = "", time = 0 } }
+end
 
 
 local function read_file(filename, offset)
@@ -290,7 +295,9 @@ end
 
 function ConsoleView:update(...)
   if self.last_output_id ~= output_id then
-    self.scroll.to.y = self:get_scrollable_size()
+    if config.autoscroll_console then
+      self.scroll.to.y = self:get_scrollable_size()
+    end
     self.last_output_id = output_id
   end
   ConsoleView.super.update(self, ...)
@@ -372,4 +379,5 @@ keymap.add {
 -- for `workspace` plugin:
 package.loaded["plugins.console.view"] = ConsoleView
 
+console.clear()
 return console
