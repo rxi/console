@@ -19,6 +19,13 @@ local files = {
 
 local console = {}
 
+-- jump indexes for forward / backward jumping
+local jump_idx = 0
+local jump_start = 0
+local jump_end = 0
+local jumped_forwards =  false
+local jumped_backwards =  false
+
 local views = {}
 local pending_threads = {}
 local thread_active = false
@@ -96,6 +103,8 @@ end
 
 function console.run(opt)
   opt = init_opt(opt)
+  jump_start = #output
+  jump_idx = jump_start
 
   local function thread()
     -- init script file(s)
@@ -155,6 +164,9 @@ function console.run(opt)
     else
       thread_active = false
     end
+
+    jump_end = #output - 2
+--     core.log(jump_start .. "   " .. jump_end)
   end
 
   -- push/init thread
@@ -169,6 +181,7 @@ function console.run(opt)
   local count = 0
   for _ in pairs(views) do count = count + 1 end
   if count == 1 then visible = true end
+
 end
 
 
@@ -320,13 +333,12 @@ function ConsoleView:draw()
       local w = style.font:get_width(time)
       renderer.draw_rect(tx, y + h / 2, w, math.ceil(SCALE * 1), style.dim)
     else
-      tx = common.draw_text(style.font, style.dim, time, "left", tx, y, w, h)
-      tx = tx + style.padding.x
-      if item.icon then
-        common.draw_text(style.icon_font, color, item.icon, "left", tx, y, w, h)
+      local _, rest = item.text:match("(.*)(/.*.odin.*)")
+      if rest ~= nil then
+        common.draw_text(style.code_font, color, rest, "left", tx, y, w, h)
+      else
+        common.draw_text(style.code_font, color, item.text, "left", tx, y, w, h)
       end
-      tx = tx + icon_w + style.padding.x
-      common.draw_text(style.code_font, color, item.text, "left", tx, y, w, h)
     end
   end
 
@@ -368,12 +380,84 @@ command.add(nil, {
       console.run { command = cmd }
       last_command = cmd
     end)
-  end
+  end,
+
+  ["console:jump-forwards"] = function()
+    if output == nil and #output == 0 then
+      return
+    end
+
+    if jumped_forwards or jumped_backwards then
+      if jump_idx < jump_end then
+        jump_idx = jump_idx + 1
+      else
+        jump_idx = jump_start
+      end
+    end
+
+    local item = output[jump_idx]
+
+    if item then
+      local file, line, col = item.text:match(item.file_pattern)
+      local resolved_file = resolve_file(file)
+      if not resolved_file then
+        core.error("Couldn't resolve file \"%s\"", file)
+        return
+      end
+
+      core.try(function()
+        local dv = core.root_view:open_doc(core.open_doc(resolved_file))
+        if line then
+          dv.doc:set_selection(line, col or 0)
+          dv:scroll_to_line(line, false, true)
+          jumped_backwards = false
+          jumped_forwards = true
+        end
+      end)
+    end
+  end,
+
+
+  ["console:jump-backwards"] = function()
+    if output == nil and #output == 0 then
+      return
+    end
+
+    if jumped_backwards or jumped_forwards then
+      if jump_idx > jump_start then
+        jump_idx = jump_idx - 1
+      else
+        jump_idx = jump_end
+      end
+    end
+    local item = output[jump_idx]
+
+    if item then
+      local file, line, col = item.text:match(item.file_pattern)
+      local resolved_file = resolve_file(file)
+      if not resolved_file then
+        core.error("Couldn't resolve file \"%s\"", file)
+        return
+      end
+
+      core.try(function()
+        local dv = core.root_view:open_doc(core.open_doc(resolved_file))
+        if line then
+          dv.doc:set_selection(line, col or 0)
+          dv:scroll_to_line(line, false, true)
+          jumped_backwards = true
+          jumped_forwards = false
+        end
+      end)
+    end
+  end,
 })
 
 keymap.add {
   ["ctrl+."] = "console:toggle",
   ["ctrl+shift+."] = "console:run",
+  ["alt+n"] = "console:jump-forwards",
+  ["alt+shift+n"] = "console:jump-backwards",
 }
 
 -- for `workspace` plugin:
