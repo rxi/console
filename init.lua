@@ -333,12 +333,13 @@ function ConsoleView:draw()
       local w = style.font:get_width(time)
       renderer.draw_rect(tx, y + h / 2, w, math.ceil(SCALE * 1), style.dim)
     else
-      local _, rest = item.text:match("(.*)(/.*.odin.*)")
-      if rest ~= nil then
-        common.draw_text(style.code_font, color, rest, "left", tx, y, w, h)
-      else
-        common.draw_text(style.code_font, color, item.text, "left", tx, y, w, h)
+      tx = common.draw_text(style.font, style.dim, time, "left", tx, y, w, h)
+      tx = tx + style.padding.x
+      if item.icon then
+        common.draw_text(style.icon_font, color, item.icon, "left", tx, y, w, h)
       end
+      tx = tx + icon_w + style.padding.x
+      common.draw_text(style.code_font, color, item.text, "left", tx, y, w, h)
     end
   end
 
