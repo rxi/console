@@ -166,7 +166,6 @@ function console.run(opt)
     end
 
     jump_end = #output - 2
---     core.log(jump_start .. "   " .. jump_end)
   end
 
   -- push/init thread
