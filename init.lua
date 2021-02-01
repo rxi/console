@@ -31,6 +31,10 @@ function console.clear()
 end
 
 
+function console.write(text)
+  output = { { text = text .. "\n" } }
+end
+
 local function read_file(filename, offset)
   local fp = io.open(filename, "rb")
   fp:seek("set", offset or 0)
@@ -366,6 +370,7 @@ command.add(nil, {
     core.command_view:set_text(last_command, true)
     core.command_view:enter("Run Console Command", function(cmd)
       console.run { command = cmd }
+      console.write(cmd)
       last_command = cmd
     end)
   end
