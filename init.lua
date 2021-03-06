@@ -177,9 +177,18 @@ local ConsoleView = View:extend()
 
 function ConsoleView:new()
   ConsoleView.super.new(self)
+  self.target_size = config.console_size
   self.scrollable = true
   self.hovered_idx = -1
   views[self] = true
+end
+
+
+function ConsoleView:set_target_size(axis, value)
+  if axis == "y" then
+    self.target_size = value
+    return true
+  end
 end
 
 
@@ -333,14 +342,13 @@ function ConsoleView:draw()
   self:draw_scrollbar(self)
 end
 
-
 -- init static bottom-of-screen console
 local view = ConsoleView()
 local node = core.root_view:get_active_node()
-node:split("down", view, true)
+node:split("down", view, {y = true}, true)
 
 function view:update(...)
-  local dest = visible and config.console_size or 0
+  local dest = visible and self.target_size or 0
   self:move_towards(self.size, "y", dest)
   ConsoleView.update(self, ...)
 end

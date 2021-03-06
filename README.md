@@ -1,6 +1,9 @@
 # Console
 A console plugin for the [lite text editor](https://github.com/rxi/lite)
 
+This version of the plugin is adapted to work with [lite xl](https://github.com/franko/lite-xl)
+and is otherwise unmodified.
+
 ![gif](https://user-images.githubusercontent.com/3920290/81343656-49325a00-90ad-11ea-8647-ff39d8f1d730.gif)
 
 ## Install
