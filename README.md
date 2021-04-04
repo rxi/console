@@ -9,7 +9,7 @@ and is otherwise unmodified.
 ## Install
 Navigate to the `data/plugins` folder and run the following command:
 ```bash
-git clone https://github.com/rxi/console
+git clone https://github.com/franko/console
 ```
 Alternatively the `init.lua` file can be renamed `console.lua` and dropped in
 the `data/plugins` folder.
