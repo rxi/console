@@ -1,3 +1,4 @@
+-- lite-xl 1.16
 local core = require "core"
 local keymap = require "core.keymap"
 local command = require "core.command"
