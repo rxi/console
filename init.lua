@@ -1,4 +1,4 @@
--- lite-xl 1.16
+-- mod-version:2 -- lite-xl 2.0
 local core = require "core"
 local keymap = require "core.keymap"
 local command = require "core.command"
@@ -11,12 +11,6 @@ config.console_size = 250 * SCALE
 config.max_console_lines = 200
 config.autoscroll_console = true
 
-local files = {
-  script   = core.temp_filename(PLATFORM == "Windows" and ".bat"),
-  script2  = core.temp_filename(PLATFORM == "Windows" and ".bat"),
-  output   = core.temp_filename(),
-  complete = core.temp_filename(),
-}
 
 local console = {}
 
@@ -29,15 +23,6 @@ local visible = false
 
 function console.clear()
   output = { { text = "", time = 0 } }
-end
-
-
-local function read_file(filename, offset)
-  local fp = io.open(filename, "rb")
-  fp:seek("set", offset or 0)
-  local res = fp:read("*a")
-  fp:close()
-  return res
 end
 
 
@@ -86,6 +71,7 @@ local function init_opt(opt)
     file_pattern = "[^?:%s]+%.[^?:%s]+",
     error_pattern = "error",
     warning_pattern = "warning",
+    cwd = ".",
     on_complete = function() end,
   }
   for k, v in pairs(res) do
@@ -99,55 +85,30 @@ function console.run(opt)
   opt = init_opt(opt)
 
   local function thread()
-    -- init script file(s)
+    local command
     if PLATFORM == "Windows" then
-      write_file(files.script, opt.command .. "\n")
-      write_file(files.script2, string.format([[
-        @echo off
-        call %q >%q 2>&1
-        echo "" >%q
-        exit
-      ]], files.script, files.output, files.complete))
-      system.exec(string.format("call %q", files.script2))
+      command = { "cmd", "/c", string.format("(%s) 2>&1", opt.command) }
     else
-      write_file(files.script, string.format([[
-        %s
-        touch %q
-      ]], opt.command, files.complete))
-      system.exec(string.format("bash %q >%q 2>&1", files.script, files.output))
+      command = { "bash", "-c", "--", string.format("(%s) 2>&1", opt.command) }
     end
 
-    -- checks output file for change and reads
-    local last_size = 0
-    local function check_output_file()
-      if PLATFORM == "Windows" then
-        local fp = io.open(files.output)
-        if fp then fp:close() end
-      end
-      local info = system.get_file_info(files.output)
-      if info and info.size > last_size then
-        local text = read_file(files.output, last_size)
+    local proc, err = process.start(command, { cwd=opt.cwd })
+    if proc then
+      local text = proc:read_stdout()
+      while text ~= nil do
         push_output(text, opt)
-        last_size = info.size
+        coroutine.yield(0.1)
+        text = proc:read_stdout()
       end
+      if output[#output].text ~= "" then
+        push_output("\n", opt)
+      end
+      push_output("!DIVIDER\n", opt)
+  
+      opt.on_complete(proc:returncode())
+    else
+      core.error("Error while executing command: %q", err)
     end
-
-    -- read output file until we get a file indicating completion
-    while not system.get_file_info(files.complete) do
-      check_output_file()
-      coroutine.yield(0.1)
-    end
-    check_output_file()
-    if output[#output].text ~= "" then
-      push_output("\n", opt)
-    end
-    push_output("!DIVIDER\n", opt)
-
-    -- clean up and finish
-    for _, file in pairs(files) do
-      os.remove(file)
-    end
-    opt.on_complete()
 
     -- handle pending thread
     local pending = table.remove(pending_threads, 1)
