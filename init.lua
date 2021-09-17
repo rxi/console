@@ -92,7 +92,7 @@ function console.run(opt)
       command = { "bash", "-c", "--", string.format("(%s) 2>&1", opt.command) }
     end
 
-    local proc, err = process.start(command, { cwd=opt.cwd })
+    local proc, err = process.start(command, { cwd=opt.cwd, stdin = process.REDIRECT_DISCARD })
     if proc then
       local text = proc:read_stdout()
       while text ~= nil do
