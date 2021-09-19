@@ -58,6 +58,7 @@ local function push_output(str, opt)
       icon = line:find(opt.error_pattern) and "!"
           or line:find(opt.warning_pattern) and "i",
       file_pattern = opt.file_pattern,
+      file_prefix = opt.file_prefix,
     })
     if #output > config.max_console_lines then
       table.remove(output, 1)
@@ -80,6 +81,7 @@ local function init_opt(opt)
     warning_pattern = "warning",
     cwd = ".",
     on_complete = function() end,
+    file_prefix = ".",
   }
   for k, v in pairs(res) do
     res[k] = opt[k] or v
@@ -209,7 +211,8 @@ function ConsoleView:on_mouse_moved(mx, my, ...)
 end
 
 
-local function resolve_file(name)
+local function resolve_file(file_prefix, name)
+  name = file_prefix .. PATHSEP .. name
   if system.get_file_info(name) then
     return name
   end
@@ -237,7 +240,7 @@ function ConsoleView:on_mouse_pressed(...)
   local item = output[self.hovered_idx]
   if item then
     local file, line, col = item.text:match(item.file_pattern)
-    local resolved_file = resolve_file(file)
+    local resolved_file = resolve_file(item.file_prefix, file)
     if not resolved_file then
       core.error("Couldn't resolve file \"%s\"", file)
       return
