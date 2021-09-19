@@ -14,6 +14,13 @@ config.autoscroll_console = true
 
 local console = {}
 
+-- The main object is used to store the main console view and the function for
+-- its activation, start_console.
+-- The main console view is the one which is shown at the botton and whose visibility can
+-- be toggled with the console:toggle command. It is created and added in the nodes'
+-- hierarchy only when it is actually required. In this way we avoid plugging the console
+-- view in a random location based on plugin load order.
+local main = {}
 local views = {}
 local pending_threads = {}
 local thread_active = false
@@ -128,6 +135,7 @@ function console.run(opt)
   end
 
   -- make sure static console is visible if it's the only ConsoleView
+  if not main.view then main.start_console() end
   local count = 0
   for _ in pairs(views) do count = count + 1 end
   if count == 1 then visible = true end
@@ -304,15 +312,17 @@ function ConsoleView:draw()
   self:draw_scrollbar(self)
 end
 
--- init static bottom-of-screen console
-local view = ConsoleView()
-local node = core.root_view:get_active_node()
-node:split("down", view, {y = true}, true)
+function main.start_console()
+  -- init static bottom-of-screen console
+  main.view = ConsoleView()
+  local node = core.root_view:get_active_node()
+  node:split("down", main.view, {y = true}, true)
 
-function view:update(...)
-  local dest = visible and self.target_size or 0
-  self:move_towards(self.size, "y", dest)
-  ConsoleView.update(self, ...)
+  function main.view:update(...)
+    local dest = visible and self.target_size or 0
+    self:move_towards(self.size, "y", dest)
+    ConsoleView.update(self, ...)
+  end
 end
 
 
@@ -330,6 +340,7 @@ command.add(nil, {
 
   ["console:toggle"] = function()
     visible = not visible
+    if visible and not main.view then main.start_console() end
   end,
 
   ["console:run"] = function()
