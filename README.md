@@ -1,8 +1,7 @@
 # Console
-A console plugin for the [lite text editor](https://github.com/rxi/lite)
+A console plugin for the [Lite XL text editor](https://github.com/lite-xl/lite-xl)
 
-This version of the plugin is adapted to work with [lite xl](https://github.com/franko/lite-xl)
-and is otherwise unmodified.
+This version of the plugin is adapted from the [console plugin](https://github.com/rxi/console) for the [lite editor](https://github.com/rxi/lite).
 
 ![gif](https://user-images.githubusercontent.com/3920290/81343656-49325a00-90ad-11ea-8647-ff39d8f1d730.gif)
 
@@ -45,6 +44,10 @@ command.add(nil, {
 
 keymap.add { ["ctrl+b"] = "project:build-project" }
 ```
+
+The `console.run` function can be also invoked with an additional option named `file_prefix`.
+If specified the prefix will be added to the file names reported in the console to help resolve them within the project.
+It can be useful when the build happens in a subdirectory of the project.
 
 ## License
 This project is free software; you can redistribute it and/or modify it under
