@@ -72,7 +72,12 @@ local function push_output(str, opt)
   core.redraw = true
 end
 
-
+-- A file pattern to identify the line and column can be given like:
+--
+-- file_pattern = "([^?:%s]+%.[^?:%s]+):(%d+):(%d+):"
+--
+-- The 2nd and 3rd captures will be considered as line and column of the
+-- position within the file.
 local function init_opt(opt)
   local res = {
     command = "",
