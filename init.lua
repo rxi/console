@@ -1,4 +1,4 @@
--- mod-version:2 -- lite-xl 2.0
+-- mod-version:3
 local core = require "core"
 local keymap = require "core.keymap"
 local command = require "core.command"
@@ -6,11 +6,6 @@ local common = require "core.common"
 local config = require "core.config"
 local style = require "core.style"
 local View = require "core.view"
-
-config.console_size = 250 * SCALE
-config.max_console_lines = 200
-config.autoscroll_console = true
-
 
 local console = {}
 
@@ -27,6 +22,49 @@ local thread_active = false
 local output = nil
 local output_id = 0
 local visible = false
+
+config.plugins.console = common.merge({
+  size = 250 * SCALE,
+  max_lines = 200,
+  autoscroll = true,
+  config_spec = {
+    name = "Console",
+    {
+      label = "Size",
+      description = "Default height of the console.",
+      path = "size",
+      type = "number",
+      min = 100,
+      default = 250,
+      get_value = function(value)
+        return value / SCALE
+      end,
+      set_value = function(value)
+        return value * SCALE
+      end,
+      on_apply = function(value)
+        if main.view then
+          main.view:set_target_size("y", value)
+        end
+      end
+    },
+    {
+      label = "Maximum Lines",
+      description = "The maximum amount of output lines to keep on history.",
+      path = "max_lines",
+      type = "number",
+      min = 100,
+      default = 200
+    },
+    {
+      label = "Auto-scroll",
+      description = "Automatically scroll down when printing new output.",
+      path = "autoscroll",
+      type = "toggle",
+      default = true,
+    }
+  }
+}, config.plugins.console)
 
 function console.clear()
   output = { { text = "", time = 0 } }
@@ -60,7 +98,7 @@ local function push_output(str, opt)
       file_pattern = opt.file_pattern,
       file_prefix = opt.file_prefix,
     })
-    if #output > config.max_console_lines then
+    if #output > config.plugins.console.max_lines then
       table.remove(output, 1)
       for view in pairs(views) do
         view:on_line_removed()
@@ -81,7 +119,7 @@ end
 local function init_opt(opt)
   local res = {
     command = "",
-    file_pattern = "[^?:%s]+%.[^?:%s]+",
+    file_pattern = "([^?:%s]+%.[^?:%s]+):?(%d*):?(%d*)",
     error_pattern = "error",
     warning_pattern = "warning",
     cwd = ".",
@@ -118,7 +156,7 @@ function console.run(opt)
         push_output("\n", opt)
       end
       push_output("!DIVIDER\n", opt)
-  
+
       opt.on_complete(proc:returncode())
     else
       core.error("Error while executing command: %q", err)
@@ -154,7 +192,7 @@ local ConsoleView = View:extend()
 
 function ConsoleView:new()
   ConsoleView.super.new(self)
-  self.target_size = config.console_size
+  self.target_size = config.plugins.console.size
   self.scrollable = true
   self.hovered_idx = -1
   views[self] = true
@@ -247,16 +285,23 @@ function ConsoleView:on_mouse_pressed(...)
     local file, line, col = item.text:match(item.file_pattern)
     local resolved_file = resolve_file(item.file_prefix, file)
     if not resolved_file then
+      -- fixes meson output which adds ../ for build sub directories
+      resolved_file = resolve_file(
+        item.file_prefix,
+        file:gsub("%.%./", ""):gsub("^%./", "")
+      )
+    end
+    if not resolved_file then
       core.error("Couldn't resolve file \"%s\"", file)
       return
     end
     core.try(function()
-      core.set_active_view(core.last_active_view)
-      local dv = core.root_view:open_doc(core.open_doc(resolved_file))
-      if line then
-        dv.doc:set_selection(line, col or 0)
-        dv:scroll_to_line(line, false, true)
-      end
+      core.root_view:open_doc(core.open_doc(resolved_file))
+      line = tonumber(line) or 1
+      col = tonumber(col) or 1
+      core.add_thread(function()
+        core.active_view.doc:set_selection(line, col)
+      end)
     end)
   end
 end
@@ -282,7 +327,7 @@ end
 
 function ConsoleView:update(...)
   if self.last_output_id ~= output_id then
-    if config.autoscroll_console then
+    if config.plugins.console.autoscroll then
       self.scroll.to.y = self:get_scrollable_size()
     end
     self.last_output_id = output_id
@@ -323,8 +368,8 @@ end
 function main.start_console()
   -- init static bottom-of-screen console
   main.view = ConsoleView()
-  local node = core.root_view:get_active_node()
-  node:split("down", main.view, {y = true}, true)
+  local node = core.root_view.root_node:get_node_for_view(core.command_view)
+  node:split("up", main.view, {y = true}, true)
 
   function main.view:update(...)
     local dest = visible and self.target_size or 0
@@ -353,10 +398,16 @@ command.add(nil, {
 
   ["console:run"] = function()
     core.command_view:set_text(last_command, true)
-    core.command_view:enter("Run Console Command", function(cmd)
-      console.run { command = cmd }
-      last_command = cmd
-    end)
+    core.command_view:enter("Run Console Command", {
+      submit = function(cmd)
+        if cmd == "clear" or cmd == "cls" then
+          console.clear()
+        else
+          console.run { command = cmd }
+          last_command = cmd
+        end
+      end
+    })
   end
 })
 
