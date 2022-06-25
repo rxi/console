@@ -8,7 +8,7 @@ This version of the plugin is adapted from the [console plugin](https://github.c
 ## Install
 Navigate to the `data/plugins` folder and run the following command:
 ```bash
-git clone https://github.com/franko/console
+git clone https://github.com/lite-xl/console
 ```
 Alternatively the `init.lua` file can be renamed `console.lua` and dropped in
 the `data/plugins` folder.
