@@ -36,7 +36,7 @@ command.add(nil, {
     console.run {
       command = "./build.sh",
       file_pattern = "(.*):(%d+):(%d+): (.*)$",
-      cwd = "."
+      cwd = ".",
       on_complete = function(retcode) core.log("Build complete with return code "..retcode) end,
     }
   end
