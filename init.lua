@@ -397,7 +397,6 @@ command.add(nil, {
   end,
 
   ["console:run"] = function()
-    core.command_view:set_text(last_command, true)
     core.command_view:enter("Run Console Command", {
       submit = function(cmd)
         if cmd == "clear" or cmd == "cls" then
@@ -406,7 +405,9 @@ command.add(nil, {
           console.run { command = cmd }
           last_command = cmd
         end
-      end
+      end,
+      text = last_command,
+      select_text = true
     })
   end
 })
