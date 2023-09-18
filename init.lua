@@ -84,13 +84,21 @@ function console.clear()
   output = { { text = "", time = 0 } }
 end
 
+function console.toggle()
+  visible = not visible
+end
+function console.close()
+  visible = false
+end
+function console.isVisible()
+  return visible
+end
 
 local function write_file(filename, text)
   local fp = io.open(filename, "w")
   fp:write(text)
   fp:close()
 end
-
 
 local function lines(text)
   return (text .. "\n"):gmatch("(.-)\n")
