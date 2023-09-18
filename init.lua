@@ -6,6 +6,7 @@ local common = require "core.common"
 local config = require "core.config"
 local style = require "core.style"
 local View = require "core.view"
+local docview = require "core.docview"
 
 local console = {}
 
@@ -27,6 +28,7 @@ config.plugins.console = common.merge({
   size = 250 * SCALE,
   max_lines = 200,
   autoscroll = true,
+  console_place = "rootview"
   config_spec = {
     name = "Console",
     {
@@ -62,6 +64,18 @@ config.plugins.console = common.merge({
       path = "autoscroll",
       type = "toggle",
       default = true,
+    },
+    {
+      label = "Place",
+      description = "Place of console output.",
+      path = "console_place",
+      type = "selection",
+      default = "rootview",
+      values =
+      {
+          {"Root View", "rootview"},
+          {"Document View", "doview"},
+      }
     }
   }
 }, config.plugins.console)
@@ -368,8 +382,14 @@ end
 function main.start_console()
   -- init static bottom-of-screen console
   main.view = ConsoleView()
-  local node = core.root_view.root_node:get_node_for_view(core.command_view)
-  node:split("up", main.view, {y = true}, true)
+
+  if config.plugins.console.console_place == "rootview" then
+    local node = core.root_view.root_node:get_node_for_view(core.command_view)
+    node:split("up", main.view, {y = true}, true)
+  else
+    local node = core.root_view.root_node:get_node_for_view(core.active_view)
+    node:split("down", main.view, {y = true}, true)
+  end
 
   function main.view:update(...)
     local dest = visible and self.target_size or 0
