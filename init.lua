@@ -311,8 +311,8 @@ function ConsoleView:on_mouse_pressed(...)
     end
     core.try(function()
       core.root_view:open_doc(core.open_doc(resolved_file))
-      line = tonumber(line) or 1
-      col = tonumber(col) or 1
+      line = tonumber(string.match(line, "%d+")) or 1
+      col = tonumber(string.match(col, "%d+")) or 1
       core.add_thread(function()
         core.active_view.doc:set_selection(line, col)
       end)
